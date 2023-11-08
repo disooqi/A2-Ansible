@@ -1,0 +1,14 @@
+configuration_block_file: secure_conf_block.j2
+
+acme_challenge_type_1: http-01
+acme_challenge_type_2: dns-01
+acme_challenge_type_3: tls-alpn-01
+acme_directory: https://acme-v02.api.letsencrypt.org/directory
+acme_version: 2
+acme_email: letsencrypt.org@eldesouki.com
+
+#letsencrypt_dir: /etc/letsencrypt
+letsencrypt_certs_dir: /etc/pki/cert/cert
+letsencrypt_keys_dir: /etc/pki/cert/keys
+letsencrypt_csrs_dir: /etc/pki/cert/csr
+letsencrypt_account_key: /etc/pki/cert/private/account.key

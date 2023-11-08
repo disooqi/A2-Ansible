@@ -1,0 +1,23 @@
+
+#- hosts: test_servers
+#  become: true
+#  tasks:
+#    - name: Install docker and docker compose
+#    - name: copy A2 compose file
+#    - name: run the project
+#    - name: Install nginx and reverse proxy A2
+#    - name: open ports for HTTP and HTTPS
+#    - name: secure the server with HTTPS cert
+
+#- hosts: all
+#  roles:
+#    - name: devsec.hardening.nginx_hardening
+
+- hosts: test_servers
+  become: true
+  vars_files:
+    - vars/default.yml
+  roles:
+    - server_initialization
+    - web_setup
+#    - web_security

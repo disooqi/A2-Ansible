@@ -1,0 +1,197 @@
+
+- name: UFW - Allow 'Nginx Full' connections
+  community.general.ufw:
+    rule: allow
+    name: 'Nginx Full'
+
+- name: Delete 'Nginx HTTP' rule
+  community.general.ufw:
+    rule: allow
+    name: 'Nginx HTTP'
+    delete: true
+
+## Install "core" snap
+#- name: Install core
+#  community.general.snap:
+#    name:
+#      - core
+#    state: present
+#
+#- name: Update apt and install Nginx
+#  apt:
+#    name:
+#      - certbot
+#    state: absent
+#
+## Install a snap with classic confinement
+#- name: Install "certbot" with option --classic
+#  community.general.snap:
+#    name: certbot
+#    classic: true
+#
+#- name: Create a symbolic link for certbot
+#  ansible.builtin.file:
+#    src: /snap/bin/certbot
+#    dest: /usr/bin/certbot
+#    owner: root
+#    group: root
+#    state: link
+
+- name: "Create required directories in /etc/pki/cert"
+  file:
+    path: "/etc/pki/cert/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=x,o=x
+  with_items:
+    - private
+    - csr
+    - keys
+    - cert
+
+- name: Check if a Let's Encrypt account key already exists
+  command: ls {{ letsencrypt_account_key }}
+  register: account_key_exists
+  ignore_errors: yes
+
+- name: Generate a Let's Encrypt account key
+  shell: "if [ ! -f \"{{ letsencrypt_account_key }}\" ]; then openssl genrsa 4096 | sudo tee {{ letsencrypt_account_key }}; fi"
+
+  #  file:
+#    path: /home/{{ user }}/myfile
+#    state: touch
+  when: account_key_exists is failed
+
+- name: Show message if a Let's Encrypt account key exists
+  debug:
+    msg: A Let's Encrypt account key already exists in the following path {{ letsencrypt_account_key }}.
+  when: account_key_exists is succeeded
+
+
+- name: Check if a Let's Encrypt private key already exists
+  command: ls {{ letsencrypt_keys_dir }}/{{ domain_name }}.key
+  register: private_key_exists
+  ignore_errors: yes
+
+- name: Generate a Let's Encrypt private key
+  shell: "openssl genrsa 4096 | sudo tee {{ letsencrypt_keys_dir }}/{{ domain_name }}.key"
+  when: private_key_exists is failed
+
+- name: Show message if a Let's Encrypt private key exists
+  debug:
+    msg: A Let's Encrypt private key already exists in the following path {{ letsencrypt_keys_dir }}/{{ domain_name }}.key.
+  when: private_key_exists is succeeded
+
+- name: Check if a Let's Encrypt CSR already exists
+  command: ls {{ letsencrypt_csrs_dir }}/{{ domain_name }}.csr
+  register: csr_exists
+  ignore_errors: yes
+
+- name: Generate a Let's Encrypt CSR
+  shell: "openssl req -new -sha256 -key {{ letsencrypt_keys_dir }}/{{ domain_name }}.key -subj \"/CN={{ domain_name }}\" -reqexts SAN -config <(cat /etc/ssl/openssl.cnf <(printf \"\n[SAN]\nsubjectAltName=DNS:{{ domain_name }}\")) | sudo tee {{ letsencrypt_csrs_dir }}/{{ domain_name }}.csr"
+  args:
+    executable: /bin/bash
+  when: csr_exists is failed
+
+- name: Show message if a Let's Encrypt CSR exists
+  debug:
+    msg: A Let's Encrypt CSR already exists in the following path {{ letsencrypt_csrs_dir }}/{{ domain_name }}.csr.
+  when: csr_exists is succeeded
+
+
+
+## Example with DNS challenge against production ACME server ###
+- name: Create a challenge for {{ domain_name }} using a account key file
+  community.crypto.acme_certificate:
+    acme_directory: "{{ acme_directory }}"
+    acme_version: "{{ acme_version }}"
+    account_key_src: "{{ letsencrypt_account_key }}"
+    account_email: "{{ acme_email }}"
+    terms_agreed: 1
+    challenge: "{{ acme_challenge_type_2 }}"
+    csr: "{{ letsencrypt_csrs_dir }}/{{ domain_name }}.csr"
+    dest: "{{ letsencrypt_certs_dir }}/{{ domain_name }}.crt"
+    fullchain_dest: "{{ letsencrypt_certs_dir }}/{{ domain_name }}-fullchain.crt"
+    # Renew if the certificate is at least 30 days old
+    remaining_days: 60
+  register: test_majarayat_challenge
+  notify: restart_nginx
+
+- name: "Create .well-known/acme-challenge directory"
+  file:
+    path: /var/www/{{ domain_name }}/html/.well-known/acme-challenge
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+  notify: restart_nginx
+
+- name: "Implement http-01 challenge files (Copy http-01 challenge for {{ domain_name }})"
+  copy:
+    content: "{{ test_majarayat_challenge['challenge_data'][item]['http-01']['resource_value'] }}"
+    dest: "/var/www/{{ domain_name }}/html/{{ test_majarayat_challenge['challenge_data'][item]['http-01']['resource'] }}"
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  with_items:
+    - "{{ domain_name }}"
+  when: test_majarayat_challenge is changed # and '{{ domain_name }}' in test_majarayat_challenge['challenge_data']
+  notify: restart_nginx
+
+#- name: "Implement dns-01 challenge files (Copy dns-01 challenge for {{ domain_name }})"
+#  copy:
+#    content: "{{ test_majarayat_challenge['challenge_data'][item]['dns-01']['resource_value'] }}"
+#    dest: "/var/www/{{ domain_name }}/html/{{ test_majarayat_challenge['challenge_data'][item]['dns-01']['resource'] }}"
+#    owner: root
+#    group: root
+#    mode: u=rw,g=r,o=r
+#  with_items:
+#    - "{{ domain_name }}"
+#  when: test_majarayat_challenge is changed # and '{{ domain_name }}' in test_majarayat_challenge['challenge_data']
+
+#- name: Create default TXT record for {{ domain_name }}
+#  community.digitalocean.digital_ocean_domain_record:
+#    domain: "test.majaray.at"
+#    state: present
+#    oauth_token: "{{ lookup('ansible.builtin.env', 'DO_PAT') }}"
+#    type: A
+#    ttl: 60
+#    name: "_acme-challenge"
+#    data: "{{ test_majarayat_challenge.challenge_data['test.majaray.at']['dns-01'].resource_value | regex_replace('^(.*)$', '\"\\1\"') }}"
+
+- name: "Complete Let's Encrypt challenges (Let the challenge be validated and retrieve the cert and intermediate certificate)"
+  community.crypto.acme_certificate:
+    account_key_src: "{{ letsencrypt_account_key }}"
+    account_email: "{{ acme_email }}"
+    src: "{{ letsencrypt_csrs_dir }}/{{ domain_name }}.csr"
+    cert: "{{ letsencrypt_certs_dir }}/{{ domain_name }}.crt"
+    fullchain: "{{ letsencrypt_certs_dir }}/{{ domain_name }}-fullchain.crt"
+    chain: "{{ letsencrypt_certs_dir }}/{{ domain_name }}-intermediate.crt"
+    challenge: "{{ acme_challenge_type_1 }}"
+    remaining_days: 60
+    data: "{{ test_majarayat_challenge }}"
+    # We use Let's Encrypt's ACME v2 endpoint
+    acme_directory: "{{ acme_directory }}"
+    acme_version: "{{ acme_version }}"
+    # The following makes sure that if a chain with /CN=DST Root CA X3 in its issuer is provided
+    # as an alternative, it will be selected. These are the roots cross-signed by IdenTrust.
+    # As long as Let's Encrypt provides alternate chains with the cross-signed root(s) when
+    # switching to their own ISRG Root X1 root, this will use the chain ending with a cross-signed
+    # root. This chain is more compatible with older TLS clients.
+    select_chain:
+      - test_certificates: last
+        issuer:
+          CN: DST Root CA X3
+          O: Digital Signature Trust Co.
+  when: test_majarayat_challenge is changed
+
+- name: Secure connections to {{ domain_name }}
+  tags: nginx
+  template:
+    src: "{{ configuration_block_file }}"
+    dest: /etc/nginx/sites-available/{{ domain_name }}
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart_nginx

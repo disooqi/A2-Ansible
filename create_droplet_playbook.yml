@@ -1,0 +1,20 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  # install
+  # ansible-galaxy collection install community.digitalocean
+  # run:
+  # $ export DO_API_TOKEN=your-token
+  # then run this playbook to create droplet: ansible-playbook -i hosts.yaml create_droplet_playbook.yml
+  tasks:
+    - name: Create a new Droplet
+      community.digitalocean.digital_ocean_droplet:
+        state: present
+        oauth_token: "{{ lookup('ansible.builtin.env', 'DO_API_TOKEN') }}"
+        name: mydroplet
+        size: s-1vcpu-1gb
+        region: ams3
+        image: ubuntu-20-04-x64
+        wait_timeout: 500
