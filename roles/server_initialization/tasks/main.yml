@@ -65,8 +65,8 @@
     rule: allow
     name: OpenSSH
 
-#- name: UFW - Enable and deny by default
-#  community.general.ufw:
-#    state: enabled
-#    default: deny
-#
+- name: UFW - Enable and deny by default
+  community.general.ufw:
+    state: enabled
+    default: deny
+
