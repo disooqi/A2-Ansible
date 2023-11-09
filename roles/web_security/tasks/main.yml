@@ -195,3 +195,8 @@
     group: root
     mode: 0644
   notify: restart_nginx
+
+- name: Restart Nginx, in all cases
+  ansible.builtin.service:
+    name: nginx
+    state: restarted
