@@ -57,3 +57,8 @@
     line: 'server_names_hash_bucket_size 64;'
   notify: restart_nginx
 
+- name: Restart Nginx, in all cases
+  ansible.builtin.service:
+    name: nginx
+    state: restarted
+
