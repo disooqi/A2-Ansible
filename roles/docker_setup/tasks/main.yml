@@ -1,0 +1,70 @@
+- name: Install aptitude
+  apt:
+    name: aptitude
+    state: latest
+    update_cache: true
+
+- name: Install required system packages
+  apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python3-pip
+      - virtualenv
+      - python3-setuptools
+    state: latest
+    update_cache: true
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu jammy stable
+    state: present
+
+- name: Update apt and install docker-ce
+  apt:
+    name: docker-ce
+    state: latest
+    update_cache: true
+
+- name: Install Docker Module for Python
+  pip:
+    name: ["docker", "docker_compose"]
+
+- name: Ensure group "docker" exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+  register: group_docker_exist
+#    gid: 1750
+
+# sudo usermod -aG docker root
+- name: "Add remote {{ ansible_ssh_user }} user to 'docker' group"
+  user:
+    name: "{{ ansible_ssh_user }}"
+    group: "{{ ansible_ssh_user }}"
+    groups: docker
+    append: yes
+  when: group_docker_exist is succeeded
+
+- name: Message
+  debug: msg='docker group does NOT exist'
+  when: group_docker_exist is failed
+
+- name: Log into {{ docker_registry }} registry and force re-authorization
+  docker_login:
+    registry: "{{ docker_registry }}"
+    username: "{{ docker_registry_username }}"
+    password: "{{ docker_registry_password }}"
+    reauthorize: yes
+
+
+#- name: Log out of Docker Registry
+#  docker_login:
+#    state: absent

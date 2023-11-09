@@ -1,0 +1,8 @@
+container_count: 4
+docker_registry: dockers.eldesouki.com
+docker_registry_username: disooqi
+docker_registry_password: "{{ lookup('env', 'docker_registry_password') }}"
+
+#default_container_name: docker
+#default_container_image: ubuntu
+#default_container_command: sleep 1
