@@ -1,23 +1,60 @@
 
-#- hosts: test_servers
-#  become: true
-#  tasks:
 #    - name: Install docker and docker compose
-#    - name: copy A2 compose file
-#    - name: run the project
-#    - name: Install nginx and reverse proxy A2
-#    - name: open ports for HTTP and HTTPS
-#    - name: secure the server with HTTPS cert
-
-#- hosts: all
-#  roles:
-#    - name: devsec.hardening.nginx_hardening
-
+# https://github.com/moovs/docker-with-ansible/blob/master/roles/docker/main.yml
 - hosts: test_servers
   become: true
   vars_files:
     - vars/default.yml
   roles:
-    - server_initialization
-    - web_setup
+#    - server_initialization  # I use Terraform to provide droplet with initial data
+#    - docker_setup
+#    - web_setup
 #    - web_security
+#    - name: devsec.hardening.nginx_hardening
+
+
+  tasks:
+#    - name: Copy website files to the server's document root
+    - name: Copy compose.yaml file
+      copy:
+        src: ../compose.yaml
+        dest: "{{ docker_compose_dir }}/{{ docker_compose_file }}"
+        mode: preserve
+
+    - name: Copy environment variables file
+      copy:
+        src: ../.env
+        dest: "{{ docker_compose_dir }}/.env"
+        mode: preserve
+
+    - name: Tear down existing services
+      community.docker.docker_compose:
+        project_src: "{{ docker_compose_dir }}"
+        state: absent
+
+    - name: Docker compose up
+      community.docker.docker_compose:
+        project_src: "{{ docker_compose_dir }}"
+        env_file: .env
+        state: present
+      register: output
+
+    - name: Show results
+      ansible.builtin.debug:
+        var: output
+
+    - name: Provide proxy server for A2-API  (requires Ansible >= 2.4)
+      ansible.builtin.replace:
+        path: /etc/nginx/sites-available/{{ domain_name }}
+#        after: 'NameVirtualHost [*]'
+        regexp: '#(proxy_set_header|proxy_pass)'
+        replace: '\1'
+      notify: restart_nginx
+
+    - name: Disable 'try_files' directive
+      ansible.builtin.replace:
+        path: /etc/nginx/sites-available/{{ domain_name }}
+        #        after: 'NameVirtualHost [*]'
+        regexp: '(try_files)'
+        replace: '#\1'
+      notify: restart_nginx
