@@ -1,64 +1,64 @@
 # task book
-- name: Wait for apt to unlock
-  become: yes
-  shell: while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done;
+#- name: Wait for apt to unlock
+#  become: yes
+#  shell: while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done;
+#
+#- name: Install updates
+#  tags: always
+#  apt:
+#    upgrade: dist
+#    update_cache: true
+#  changed_when: false
+#  ignore_errors: yes
+#  when: ansible_distribution in ["Debian", "Ubuntu"]
 
-- name: Install updates
-  tags: always
-  apt:
-    upgrade: dist
-    update_cache: true
-  changed_when: false
-  ignore_errors: yes
-  when: ansible_distribution in ["Debian", "Ubuntu"]
+#- name: Install aptitude
+#  apt:
+#    name: aptitude
+#    state: latest
+#    update_cache: true
+#
+#  when: ansible_distribution in ["Debian", "Ubuntu"]
 
-- name: Install aptitude
-  apt:
-    name: aptitude
-    state: latest
-    update_cache: true
+#- name: Setup passwordless sudo
+#  lineinfile:
+#    path: /etc/sudoers
+#    state: present
+#    regexp: '^%sudo'
+#    line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+#    validate: '/usr/sbin/visudo -cf %s'
 
-  when: ansible_distribution in ["Debian", "Ubuntu"]
+#- name: Create a new regular user with sudo privileges
+#  user:
+#    name: "{{ created_username }}"
+#    state: present
+#    groups: sudo
+#    append: true
+#    create_home: true
 
-- name: Setup passwordless sudo
-  lineinfile:
-    path: /etc/sudoers
-    state: present
-    regexp: '^%sudo'
-    line: '%sudo ALL=(ALL) NOPASSWD: ALL'
-    validate: '/usr/sbin/visudo -cf %s'
+#- name: Set authorized key for remote user
+#  ansible.posix.authorized_key:
+#    user: "{{ created_username }}"
+#    state: present
+#    key: "{{ lookup('file', lookup('env','HOME') + '/Dropbox/keys/gaza.pub') }}"
 
-- name: Create a new regular user with sudo privileges
-  user:
-    name: "{{ created_username }}"
-    state: present
-    groups: sudo
-    append: true
-    create_home: true
+#- name: Disable password authentication for root
+#  lineinfile:
+#    path: /etc/ssh/sshd_config
+#    state: present
+#    regexp: '^#?PermitRootLogin'
+#    line: 'PermitRootLogin prohibit-password'
 
-- name: Set authorized key for remote user
-  ansible.posix.authorized_key:
-    user: "{{ created_username }}"
-    state: present
-    key: "{{ lookup('file', lookup('env','HOME') + '/Dropbox/keys/gaza.pub') }}"
-
-- name: Disable password authentication for root
-  lineinfile:
-    path: /etc/ssh/sshd_config
-    state: present
-    regexp: '^#?PermitRootLogin'
-    line: 'PermitRootLogin prohibit-password'
-
-- name: Update apt and install required system packages
-  apt:
-    name:
-      - curl
-      - vim
-      - git
-      - ufw
-    state: latest
-#        state: absent  # to remove the packages
-    update_cache: true
+#- name: Update apt and install required system packages
+#  apt:
+#    name:
+#      - curl
+#      - vim
+#      - git
+#      - ufw
+#    state: latest
+##        state: absent  # to remove the packages
+#    update_cache: true
 
 - name: UFW - Allow SSH connections
   community.general.ufw:

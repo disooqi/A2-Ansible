@@ -1,40 +1,59 @@
 
 #    - name: Install docker and docker compose
 # https://github.com/moovs/docker-with-ansible/blob/master/roles/docker/main.yml
-- hosts: test_servers
+- hosts: crawlers
   become: true
   vars_files:
     - vars/default.yml
   roles:
-    - server_initialization  # I use Terraform to provide droplet with initial data
-    - docker_setup
-    - web_setup
-    - web_security
+#    - server_initialization  # I use Terraform to provide droplet with initial data
+#    - docker_setup
+#    - web_setup
+#    - web_security
 #    - name: devsec.hardening.nginx_hardening
-
+#
   tasks:
 #    - name: Copy website files to the server's document root
-    - name: Copy compose.yaml file
-      copy:
-        src: ../compose.yaml
-        dest: "{{ docker_compose_dir }}/{{ docker_compose_file }}"
-        mode: preserve
+#    - name: Copy compose.yaml file
+#      copy:
+#        src: /home/disooqi/projects/A2-Crawler/compose-test.yml
+#        dest: "{{ docker_compose_dir }}/{{ docker_compose_file }}"
+#        mode: preserve
+    - name: Install Docker SDK for Python
+      ansible.builtin.pip:
+        name:
+          - "docker==6.1.3"
+          - "docker-compose"
 
-    - name: Copy environment variables file
+    - name: copy 'compose.yaml' and '.env' items
       copy:
-        src: ../.env
-        dest: "{{ docker_compose_dir }}/.env"
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
         mode: preserve
-
+      loop:
+        - src: /home/disooqi/projects/A2-Crawler/compose-test.yml
+          dest: "{{ docker_compose_dir }}/{{ docker_compose_file }}"
+        - src: /home/disooqi/projects/A2-Crawler/.env.test
+          dest: "{{ docker_compose_dir }}/.env.test"
+#        - src: dynamic
+#          dest: "{{ var_path }}"
+##
+##    - name: Copy environment variables file
+##      copy:
+##        src: ../.env
+##        dest: "{{ docker_compose_dir }}/.env"
+##        mode: preserve
+#
     - name: Tear down existing services
       community.docker.docker_compose:
         project_src: "{{ docker_compose_dir }}"
+        env_file: .env.test
         state: absent
-
+#
     - name: Docker compose build and then up
       community.docker.docker_compose:
         project_src: "{{ docker_compose_dir }}"
-        env_file: .env
+#        env_file: .env
         build: true
         remove_orphans: true
         state: present
@@ -44,7 +63,7 @@
       ansible.builtin.debug:
         var: output
 
-    - name: Provide proxy server for A2-API  (requires Ansible >= 2.4)
+    - name: Provide proxy server for scrapyd  (requires Ansible >= 2.4)
       ansible.builtin.replace:
         path: /etc/nginx/sites-available/{{ domain_name }}
 #        after: 'NameVirtualHost [*]'
@@ -65,4 +84,3 @@
       service:
         name: nginx
         state: restarted
-

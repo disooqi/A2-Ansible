@@ -1,5 +1,10 @@
 [test_servers]
-a2-test-env-1 ansible_host=164.90.162.100
+a2-test-env-1 ansible_host=167.172.170.54
+
+[crawlers]
+a2-alzwa-test-1 ansible_host=146.190.216.224 domain_name=a2-alzwa-test-1-nyc1.majaray.at
+a2-alzwa-test-2 ansible_host=157.245.55.162 domain_name=a2-alzwa-test-2-sgp1.majaray.at
+a2-alzwa-test-3 ansible_host=159.65.159.152 domain_name=a2-alzwa-test-3-blr1.majaray.at
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3

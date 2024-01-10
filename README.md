@@ -4,4 +4,6 @@
 To use this project run the following commands:
 ```shell
 ansible-playbook deploy-a2-test.yml
+
+ansible-playbook deploy-crawler-test.yml
 ```
