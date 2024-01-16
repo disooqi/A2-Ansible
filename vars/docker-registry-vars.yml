@@ -1,0 +1,7 @@
+---
+
+create_user: a2-user
+base_dir: /home/a2-user
+open_port: 5000
+
+docker_compose_dir: /home/a2-user/docker-registry

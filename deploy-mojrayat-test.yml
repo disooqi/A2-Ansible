@@ -1,0 +1,78 @@
+
+#    - name: Install docker and docker compose
+# https://github.com/moovs/docker-with-ansible/blob/master/roles/docker/main.yml
+- hosts: mojrayat
+  become: true
+  vars_files:
+    - vars/mojrayat-vars.yml
+#  roles:
+#    - server_initialization
+#    - docker_setup
+#    - web_setup
+#    - web_security
+
+  tasks:
+    - name: copy 'compose.yaml' and '.env' items
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: preserve
+      loop:
+        - src: "{{ project_dir }}/compose.test.yml"
+          dest: "{{ base_dir }}/{{ docker_compose_file }}"
+        - src: "{{ project_dir }}/.env.test"
+          dest: "{{ base_dir }}/.env.local"
+#        - src: /home/disooqi/projects/A2-Interface-main.zip
+#          dest: "{{ base_dir }}/mojrayat.zip"
+#        - src: dynamic
+#          dest: "{{ var_path }}"
+
+
+
+    - name: Unarchive a project zip file
+      ansible.builtin.unarchive:
+        src: /home/disooqi/projects/A2-Interface-main.zip
+        dest: "{{ base_dir }}"
+        remote_src: no
+#
+#    - name: Tear down existing services
+#      community.docker.docker_compose:
+#        project_src: "{{ base_dir }}"
+#        env_file: .env.test
+#        state: absent
+##
+#    - name: Docker compose build and then up
+#      community.docker.docker_compose:
+#        project_src: "{{ base_dir }}"
+##        env_file: .env
+#        build: true
+#        remove_orphans: true
+#        state: present
+#      register: output
+
+    - name: Show results
+      ansible.builtin.debug:
+        var: output
+
+
+    - name: Provide proxy server   (requires Ansible >= 2.4)
+      ansible.builtin.replace:
+        path: /etc/nginx/sites-available/{{ domain_name }}
+#        after: 'NameVirtualHost [*]'
+        regexp: '#(proxy_set_header|proxy_pass)'
+        replace: '\1'
+      notify: restart_nginx
+
+    - name: Disable 'try_files' directive
+      ansible.builtin.replace:
+        path: /etc/nginx/sites-available/{{ domain_name }}
+        #        after: 'NameVirtualHost [*]'
+        regexp: '\s(try_files)'
+        replace: '#\1'
+      notify: restart_nginx
+
+  handlers:
+    - name: restart_nginx
+      service:
+        name: nginx
+        state: restarted

@@ -1,15 +1,15 @@
 
 #    - name: Install docker and docker compose
 # https://github.com/moovs/docker-with-ansible/blob/master/roles/docker/main.yml
-- hosts: crawlers
+- hosts: alzwa
   become: true
   vars_files:
     - vars/default.yml
   roles:
-#    - server_initialization  # I use Terraform to provide droplet with initial data
-#    - docker_setup
-#    - web_setup
-#    - web_security
+    - server_initialization
+    - docker_setup
+    - web_setup
+    - web_security
 #    - name: devsec.hardening.nginx_hardening
 #
   tasks:

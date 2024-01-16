@@ -1,10 +1,20 @@
-[test_servers]
-a2-test-env-1 ansible_host=167.172.170.54
+[alzwa]
+a2-alzwa-test-1 ansible_host=170.64.136.35 domain_name=a2-alzwa-test-4-syd1.mojrayat.com
 
-[crawlers]
-a2-alzwa-test-1 ansible_host=146.190.216.224 domain_name=a2-alzwa-test-1-nyc1.majaray.at
-a2-alzwa-test-2 ansible_host=157.245.55.162 domain_name=a2-alzwa-test-2-sgp1.majaray.at
-a2-alzwa-test-3 ansible_host=159.65.159.152 domain_name=a2-alzwa-test-3-blr1.majaray.at
+
+[mojrayat]
+mojrayat-test-1 ansible_host=164.90.231.27  domain_name=test.mojrayat.com
+
+
+
+[tliq]
+a2-tliq-test-1 ansible_host=207.154.243.227
+
+[mata3]
+a2-mata3-test-1 ansible_host=164.90.188.27
+
+[docker_registry]
+docker-registry ansible_host=207.154.197.233 domain_name=dockers.eldesouki.com
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3

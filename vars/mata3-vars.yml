@@ -1,0 +1,11 @@
+---
+
+project_dir: /home/disooqi/projects/A2-Mata3
+
+create_user: a2-user
+base_dir: /home/a2-user
+
+docker_compose_file: compose.yaml
+env_var_file: .env.test
+test_compose_file: /home/disooqi/projects/A2-Mata3/compose.test.yml
+test_env_file: /home/disooqi/projects/A2-Mata3/.env.test

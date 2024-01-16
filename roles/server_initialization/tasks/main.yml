@@ -3,21 +3,21 @@
 #  become: yes
 #  shell: while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done;
 #
-#- name: Install updates
-#  tags: always
-#  apt:
-#    upgrade: dist
-#    update_cache: true
-#  changed_when: false
-#  ignore_errors: yes
-#  when: ansible_distribution in ["Debian", "Ubuntu"]
+- name: Install updates
+  tags: always
+  apt:
+    upgrade: dist
+    update_cache: true
+  changed_when: false
+  ignore_errors: yes
+  when: ansible_distribution in ["Debian", "Ubuntu"]
 
-#- name: Install aptitude
-#  apt:
-#    name: aptitude
-#    state: latest
-#    update_cache: true
-#
+- name: Install aptitude
+  apt:
+    name: aptitude
+    state: latest
+    update_cache: true
+
 #  when: ansible_distribution in ["Debian", "Ubuntu"]
 
 #- name: Setup passwordless sudo
@@ -49,16 +49,21 @@
 #    regexp: '^#?PermitRootLogin'
 #    line: 'PermitRootLogin prohibit-password'
 
-#- name: Update apt and install required system packages
-#  apt:
-#    name:
-#      - curl
-#      - vim
-#      - git
-#      - ufw
-#    state: latest
-##        state: absent  # to remove the packages
-#    update_cache: true
+- name: Update apt and install required system packages
+  apt:
+    name:
+      - curl
+      - vim
+      - git
+      - ufw
+      - zip
+      - gzip
+#      - zipinfo
+      - tar
+#      - gtar
+    state: latest
+#        state: absent  # to remove the packages
+    update_cache: true
 
 - name: UFW - Allow SSH connections
   community.general.ufw:

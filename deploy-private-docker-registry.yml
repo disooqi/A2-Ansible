@@ -1,0 +1,103 @@
+
+#    - name: Install docker and docker compose
+# https://github.com/moovs/docker-with-ansible/blob/master/roles/docker/main.yml
+- hosts: docker-registry
+  become: true
+  vars_files:
+    - vars/docker-registry-vars.yml
+#  roles:
+#    - server_initialization
+#    - docker_setup
+#    - web_setup
+#    - web_security
+
+  tasks:
+    - name: Create a directory 'docker-registry' where your registry will be storing its data and configuration.
+      ansible.builtin.file:
+        path: "{{ base_dir }}/docker-registry/data"
+        state: directory
+        owner: "{{ ansible_ssh_user }}"
+        group: "{{ ansible_ssh_user }}"
+
+    - name: Provide proxy server for 'docker registry' (requires Ansible >= 2.4)
+      ansible.builtin.replace:
+        path: /etc/nginx/sites-available/{{ domain_name }}
+#        after: 'NameVirtualHost [*]'
+        regexp: '#(proxy_set_header|proxy_pass)'
+        replace: '\1'
+      notify: restart_nginx
+
+    - name: Disable 'try_files' directive
+      ansible.builtin.replace:
+        path: /etc/nginx/sites-available/{{ domain_name }}
+        #        after: 'NameVirtualHost [*]'
+        regexp: '\s(try_files)'
+        replace: '#\1'
+      notify: restart_nginx
+
+    - name: Update apt and install 'apache2-utils'
+#      "pkg=python-passlib state=installed"
+      apt:
+        name:
+          - apache2-utils
+        state: latest
+        #        state: absent  # to remove the packages
+        update_cache: true
+
+    - name: Install latest 'passlib' with pip
+      ansible.builtin.pip:
+        name:
+          - "passlib"
+    - name: Create a directory 'docker-registry/auth' where your store the authentication file with credentials.
+      ansible.builtin.file:
+        path: "{{ base_dir }}/docker-registry/auth"
+        state: directory
+        owner: "{{ ansible_ssh_user }}"
+        group: "{{ ansible_ssh_user }}"
+
+#    - name: Add a user to a password file and ensure permissions are set
+#      community.general.htpasswd:
+#        path: "{{ base_dir }}/docker-registry/auth/registry.password"
+#        name: disooqi
+#        password: 'YntdqESQ1XHwggr'
+#        owner: root
+#        group: www-data
+#        mode: 0640
+    - name: Copy "compose.yaml" file into "/docker-registry" dir
+      tags: nginx,html
+      copy:
+        src: docker-compose.yml
+        dest: "{{ docker_compose_dir }}/docker-compose.yml"
+        mode: preserve
+    - name: Tear down existing services
+      community.docker.docker_compose:
+        project_src: "{{ docker_compose_dir }}"
+        #        env_file: .env.test
+        state: absent
+    - name: Docker compose build and then up
+      community.docker.docker_compose:
+        project_src: "{{ docker_compose_dir }}"
+        #        env_file: .env
+        build: true
+        remove_orphans: true
+        state: present
+      register: output
+    - name: Show results
+      ansible.builtin.debug:
+        var: output
+
+    - name: Make the maximum upload size equal to 16GB.
+      lineinfile:
+        path: /etc/nginx/nginx.conf
+        state: present
+        # # server_names_hash_bucket_size 64;
+        regexp: 'http {'
+        line: "http {\n\tclient_max_body_size 16384m;"
+      notify: restart_nginx
+
+  handlers:
+    - name: restart_nginx
+      service:
+        name: nginx
+        state: restarted
+
