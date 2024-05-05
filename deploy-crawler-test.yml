@@ -6,10 +6,10 @@
   vars_files:
     - vars/default.yml
   roles:
-    - server_initialization
-    - docker_setup
-    - web_setup
-    - web_security
+#    - server_initialization
+#    - docker_setup
+#    - web_setup
+#    - web_security
 #    - name: devsec.hardening.nginx_hardening
 #
   tasks:
@@ -19,11 +19,11 @@
 #        src: /home/disooqi/projects/A2-Crawler/compose-test.yml
 #        dest: "{{ docker_compose_dir }}/{{ docker_compose_file }}"
 #        mode: preserve
-    - name: Install Docker SDK for Python
-      ansible.builtin.pip:
-        name:
-          - "docker==6.1.3"
-          - "docker-compose"
+#    - name: Install Docker SDK for Python
+#      ansible.builtin.pip:
+#        name:
+#          - "docker==6.1.3"
+#          - "docker-compose"
 
     - name: copy 'compose.yaml' and '.env' items
       copy:
@@ -63,21 +63,7 @@
       ansible.builtin.debug:
         var: output
 
-    - name: Provide proxy server for scrapyd  (requires Ansible >= 2.4)
-      ansible.builtin.replace:
-        path: /etc/nginx/sites-available/{{ domain_name }}
-#        after: 'NameVirtualHost [*]'
-        regexp: '#(proxy_set_header|proxy_pass)'
-        replace: '\1'
-      notify: restart_nginx
 
-    - name: Disable 'try_files' directive
-      ansible.builtin.replace:
-        path: /etc/nginx/sites-available/{{ domain_name }}
-        #        after: 'NameVirtualHost [*]'
-        regexp: '\s(try_files)'
-        replace: '#\1'
-      notify: restart_nginx
 
   handlers:
     - name: restart_nginx

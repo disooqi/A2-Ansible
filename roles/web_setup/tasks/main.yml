@@ -28,25 +28,25 @@
     group: "{{ ansible_ssh_user }}"
 #    mode: 0644
 
-- name: Create a server block
-  tags: nginx
-  template:
-    src: "{{ configuration_block_file }}"
-    dest: /etc/nginx/sites-available/{{ domain_name }}
-    owner: root
-    group: root
-    mode: 0644
-  notify: restart_nginx
-
-# ln -s /etc/nginx/sites-available/your_domain /etc/nginx/sites-enabled/
-- name: Create a symbolic link for server block
-  ansible.builtin.file:
-    src: /etc/nginx/sites-available/{{ domain_name }}
-    dest: /etc/nginx/sites-enabled/{{ domain_name }}
-    owner: root
-    group: root
-    state: link
-  notify: restart_nginx
+#- name: Create a server block
+#  tags: nginx
+#  template:
+#    src: "{{ configuration_block_file }}"
+#    dest: /etc/nginx/sites-available/{{ domain_name }}
+#    owner: root
+#    group: root
+#    mode: 0644
+#  notify: restart_nginx
+#
+## ln -s /etc/nginx/sites-available/your_domain /etc/nginx/sites-enabled/
+#- name: Create a symbolic link for server block
+#  ansible.builtin.file:
+#    src: /etc/nginx/sites-available/{{ domain_name }}
+#    dest: /etc/nginx/sites-enabled/{{ domain_name }}
+#    owner: root
+#    group: root
+#    state: link
+#  notify: restart_nginx
 
 - name: Enable server_names_hash_bucket_size
   lineinfile:

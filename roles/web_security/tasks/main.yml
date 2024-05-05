@@ -38,7 +38,21 @@
     state: link
 # sudo certbot --nginx --email letsencrypt@eldesouki.com -d test.majaray.at --agree-tos --non-interactive
 
+- name: Provide proxy server for scrapyd  (requires Ansible >= 2.4)
+  ansible.builtin.replace:
+    path: /etc/nginx/sites-available/{{ domain_name }}
+#        after: 'NameVirtualHost [*]'
+    regexp: '#(proxy_set_header|proxy_pass)'
+    replace: '\1'
+  notify: restart_nginx
 
+- name: Disable 'try_files' directive
+  ansible.builtin.replace:
+    path: /etc/nginx/sites-available/{{ domain_name }}
+    #        after: 'NameVirtualHost [*]'
+    regexp: '\s(try_files)'
+    replace: '#\1'
+  notify: restart_nginx
 
 
 #- name: "Create required directories in /etc/pki/cert"

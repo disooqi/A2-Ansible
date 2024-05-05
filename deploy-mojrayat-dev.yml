@@ -1,0 +1,123 @@
+- hosts: mojrayat-dev
+  become: true
+  vars_files:
+    - vars/mojrayat-dev.yml
+
+#  roles:
+#    - server_initialization
+#    - docker_setup
+#    - web_setup
+#    - web_security
+  tasks:
+    - name: Create Alzwa server block
+      tags: nginx
+      template:
+        src: "{{ alzwa_conf_block }}"
+        dest: /etc/nginx/sites-available/{{ alzwa_domain_name }}
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart_nginx
+
+    - name: Create a symbolic link for the Alzwa server block
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/{{ alzwa_domain_name }}
+        dest: /etc/nginx/sites-enabled/{{ alzwa_domain_name }}
+        owner: root
+        group: root
+        state: link
+      notify: restart_nginx
+
+    - name: copy 'compose.yaml' and '.env' items
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: preserve
+      loop:
+        - src: "{{ project_dir }}/{{ compose_file }}"
+          dest: "{{ base_dir }}/compose.yaml"
+        - src: "{{ project_dir }}/{{ env_file }}"
+          dest: "{{ base_dir }}/.env"
+    #    - name: Unarchive a project zip file
+    #      ansible.builtin.unarchive:
+    #        src: /home/disooqi/projects/A2-Interface-main.zip
+    #        dest: "{{ base_dir }}"
+    #        remote_src: no
+    - name: Create a directory for 'A2-TLIQ' resources
+      ansible.builtin.file:
+        path: "{{ base_dir }}/resources"
+        state: directory
+        owner: "{{ ansible_ssh_user }}"
+        group: "{{ ansible_ssh_user }}"
+
+
+    - name: copy 'A2-TLIQ' resources file to the directory
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: preserve
+      loop:
+        - src: "{{ tliq_project_dir }}/resources/_cc_inconcepts_count.sql"
+          dest: "{{ base_dir }}/resources/_cc_inconcepts_count.sql"
+
+        - src: "{{ tliq_project_dir }}/resources/_cc_outconcepts_count.sql"
+          dest: "{{ base_dir }}/resources/_cc_outconcepts_count.sql"
+
+        - src: "{{ tliq_project_dir }}/resources/_concept_inconcepts_list_index.sql"
+          dest: "{{ base_dir }}/resources/_concept_inconcepts_list_index.sql"
+
+        - src: "{{ tliq_project_dir }}/resources/_concept_outconcepts_list_index.sql"
+          dest: "{{ base_dir }}/resources/_concept_outconcepts_list_index.sql"
+
+        - src: "{{ tliq_project_dir }}/resources/concepts.xml"
+          dest: "{{ base_dir }}/resources/concepts.xml"
+
+        - src: "{{ tliq_project_dir }}/resources/concepts_normalized_no_sw_removal.xml"
+          dest: "{{ base_dir }}/resources/concepts_normalized_no_sw_removal.xml"
+
+        - src: "{{ tliq_project_dir }}/resources/term_concepts_list_index.sql"
+          dest: "{{ base_dir }}/resources/term_concepts_list_index.sql"
+
+
+    - name: Tear down existing services
+      community.docker.docker_compose:
+        project_src: "{{ base_dir }}"
+        env_file: .env
+        remove_orphans: true
+        state: absent
+    - name: Docker compose build and then up
+      community.docker.docker_compose:
+        project_src: "{{ base_dir }}"
+        #        env_file: .env
+        build: true
+        remove_orphans: true
+        state: present
+      register: output
+
+    - name: Show results
+      ansible.builtin.debug:
+        var: output
+
+    - name: Provide proxy server (requires Ansible >= 2.4)
+      ansible.builtin.replace:
+        path: /etc/nginx/sites-available/{{ alzwa_domain_name }}
+        #        after: 'NameVirtualHost [*]'
+        regexp: '#(proxy_set_header|proxy_pass)'
+        replace: '\1'
+      notify: restart_nginx
+
+    - name: Disable 'try_files' directive
+      ansible.builtin.replace:
+        path: /etc/nginx/sites-available/{{ alzwa_domain_name }}
+        #        after: 'NameVirtualHost [*]'
+        regexp: '\s(try_files)'
+        replace: '#\1'
+      notify: restart_nginx
+
+
+
+  handlers:
+    - name: restart_nginx
+      service:
+        name: nginx
+        state: restarted

@@ -1,0 +1,23 @@
+---
+
+project_dir: /home/disooqi/projects/mojrayat
+tliq_project_dir: /home/disooqi/projects/A2-TLIQ
+
+create_user: a2-user
+base_dir: /home/a2-user
+
+compose_file: compose-test.yml
+env_file: .env.test
+
+
+domain_name: dev.mojrayat.com
+#conf_block: dev_conf_block.j2
+#configuration_block_file: secure_conf_block.j2
+
+alzwa_conf_block: alzwa_conf_block.j2
+alzwa_domain_name: alzwa.mojrayat.com
+alzwa_open_port: 6800
+
+
+
+open_port: 8000

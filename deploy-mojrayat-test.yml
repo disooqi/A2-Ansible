@@ -21,48 +21,36 @@
         - src: "{{ project_dir }}/compose.test.yml"
           dest: "{{ base_dir }}/{{ docker_compose_file }}"
         - src: "{{ project_dir }}/.env.test"
-          dest: "{{ base_dir }}/.env.local"
-#        - src: /home/disooqi/projects/A2-Interface-main.zip
-#          dest: "{{ base_dir }}/mojrayat.zip"
-#        - src: dynamic
-#          dest: "{{ var_path }}"
-
-
-
-    - name: Unarchive a project zip file
-      ansible.builtin.unarchive:
-        src: /home/disooqi/projects/A2-Interface-main.zip
-        dest: "{{ base_dir }}"
-        remote_src: no
-#
-#    - name: Tear down existing services
-#      community.docker.docker_compose:
-#        project_src: "{{ base_dir }}"
-#        env_file: .env.test
-#        state: absent
-##
-#    - name: Docker compose build and then up
-#      community.docker.docker_compose:
-#        project_src: "{{ base_dir }}"
-##        env_file: .env
-#        build: true
-#        remove_orphans: true
-#        state: present
-#      register: output
+          dest: "{{ base_dir }}/.env.test"
+#    - name: Unarchive a project zip file
+#      ansible.builtin.unarchive:
+#        src: /home/disooqi/projects/A2-Interface-main.zip
+#        dest: "{{ base_dir }}"
+#        remote_src: no
+    - name: Tear down existing services
+      community.docker.docker_compose:
+        project_src: "{{ base_dir }}"
+        env_file: .env.test
+        state: absent
+    - name: Docker compose build and then up
+      community.docker.docker_compose:
+        project_src: "{{ base_dir }}"
+#        env_file: .env
+        build: true
+        remove_orphans: true
+        state: present
+      register: output
 
     - name: Show results
       ansible.builtin.debug:
         var: output
-
-
-    - name: Provide proxy server   (requires Ansible >= 2.4)
+    - name: Provide proxy server (requires Ansible >= 2.4)
       ansible.builtin.replace:
         path: /etc/nginx/sites-available/{{ domain_name }}
 #        after: 'NameVirtualHost [*]'
         regexp: '#(proxy_set_header|proxy_pass)'
         replace: '\1'
       notify: restart_nginx
-
     - name: Disable 'try_files' directive
       ansible.builtin.replace:
         path: /etc/nginx/sites-available/{{ domain_name }}

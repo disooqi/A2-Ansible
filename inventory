@@ -1,17 +1,17 @@
-[alzwa]
-a2-alzwa-test-1 ansible_host=170.64.136.35 domain_name=a2-alzwa-test-4-syd1.mojrayat.com
+[mojrayat_dev]
+mojrayat-dev ansible_host=142.93.99.180  domain_name=dev.mojrayat.com
 
+[mojrayat_test]
+mojrayat-test ansible_host=164.90.231.27  domain_name=test.mojrayat.com
 
-[mojrayat]
-mojrayat-test-1 ansible_host=164.90.231.27  domain_name=test.mojrayat.com
+[alzwa_dev]
+alzwa-dev ansible_host=142.93.99.180 domain_name=alzwa.mojrayat.com
 
+[tliq_dev]
+tliq-dev ansible_host=142.93.99.180
 
-
-[tliq]
-a2-tliq-test-1 ansible_host=207.154.243.227
-
-[mata3]
-a2-mata3-test-1 ansible_host=164.90.188.27
+[mata3_dev]
+mata3-dev ansible_host=142.93.99.180
 
 [docker_registry]
 docker-registry ansible_host=207.154.197.233 domain_name=dockers.eldesouki.com

@@ -1,0 +1,19 @@
+server {
+        listen 80;
+        listen [::]:80;
+
+        root /var/www/{{ alzwa_domain_name }}/html;
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name {{ alzwa_domain_name }};
+
+
+        location / {
+                proxy_pass        http://localhost:{{ alzwa_open_port }};
+                proxy_set_header  Host              $http_host;
+                proxy_set_header  X-Real-IP         $remote_addr; # pass on real client's IP
+                proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
+                proxy_set_header  X-Forwarded-Proto $scheme;
+                proxy_read_timeout                  900;
+        }
+}

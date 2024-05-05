@@ -1,6 +1,8 @@
 container_count: 4
 docker_registry: dockers.eldesouki.com
 docker_registry_username: disooqi
+
+# The following line looks for the env variable in .bashrc file
 docker_registry_password: "{{ lookup('env', 'docker_registry_password') }}"
 
 #default_container_name: docker
